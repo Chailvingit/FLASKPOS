@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}Process Payment - Restaurant POS System{% endblock %}
+
+{% block page_title %}Process Payment for Order #{{ order.id }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Order Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <p><strong>Table:</strong> {{ order.table.name }}</p>
+                        <p><strong>Server:</strong> {{ order.user.full_name }}</p>
+                        <p><strong>Date:</strong> {{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Status:</strong> 
+                            <span class="badge bg-{% if order.status == 'ready' %}success{% else %}primary{% endif %}">
+                                {{ order.status|capitalize }}
+                            </span>
+                        </p>
+                        <p><strong>Items:</strong> {{ order.order_items|length }}</p>
+                        <p><strong>Total:</strong> ${{ order.total_amount|round(2) }}</p>
+                    </div>
+                </div>
+
+                <h6 class="mb-3">Order Items</h6>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Quantity</th>
+                            <th>Price</th>
+                            <th>Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in order.order_items %}
+                        <tr>
+                            <td>{{ item.menu_item.name }}
+                                {% if item.notes %}
+                                <small class="text-muted d-block">Note: {{ item.notes }}</small>
+                                {% endif %}
+                            </td>
+                            <td>{{ item.quantity }}</td>
+                            <td>${{ item.price|round(2) }}</td>
+                            <td>${{ item.subtotal|round(2) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="3" class="text-end">Total:</th>
+                            <th>${{ order.total_amount|round(2) }}</th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Payment</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{{ url_for('process_payment', order_id=order.id) }}">
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">Amount</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="amount" name="amount" value="{{ order.total_amount|round(2) }}" step="0.01" min="0" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">Payment Method</label>
+                        <div class="d-grid gap-2">
+                            <button type="submit" name="payment_type" value="cash" class="btn btn-warning btn-lg">Cash</button>
+                            <button type="submit" name="payment_type" value="credit" class="btn btn-primary btn-lg">Credit Card</button>
+                            <button type="submit" name="payment_type" value="debit" class="btn btn-info btn-lg">Debit Card</button>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

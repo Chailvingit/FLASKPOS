@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Ingredient - Restaurant POS System{% endblock %}
+
+{% block page_title %}Add Ingredient{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 col-md-10 mx-auto">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Add New Ingredient</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Ingredient Name</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="current_quantity" class="form-label">Current Quantity</label>
+                            <input type="number" step="0.01" class="form-control" id="current_quantity" name="current_quantity" value="0" min="0" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="unit" class="form-label">Unit</label>
+                            <select class="form-select" id="unit" name="unit" required>
+                                <option value="kg">Kilograms (kg)</option>
+                                <option value="g">Grams (g)</option>
+                                <option value="L">Liters (L)</option>
+                                <option value="ml">Milliliters (ml)</option>
+                                <option value="pcs">Pieces (pcs)</option>
+                                <option value="box">Boxes (box)</option>
+                                <option value="bottle">Bottles (bottle)</option>
+                                <option value="can">Cans (can)</option>
+                                <option value="pack">Packs (pack)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="min_quantity" class="form-label">Minimum Quantity</label>
+                            <input type="number" step="0.01" class="form-control" id="min_quantity" name="min_quantity" value="0" min="0" required>
+                            <div class="form-text">Stock level that triggers a low stock warning</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="max_quantity" class="form-label">Maximum Quantity</label>
+                            <input type="number" step="0.01" class="form-control" id="max_quantity" name="max_quantity" value="0" min="0" required>
+                            <div class="form-text">Maximum storage capacity</div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="suppliers" class="form-label">Suppliers</label>
+                        <select multiple class="form-select" id="suppliers" name="suppliers" size="5">
+                            {% for supplier in suppliers %}
+                            <option value="{{ supplier.id }}">{{ supplier.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Hold Ctrl (or Cmd on Mac) to select multiple suppliers</div>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('ingredients') }}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">Add Ingredient</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

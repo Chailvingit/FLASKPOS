@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+
+{% block title %}Kitchen Display System - Restaurant POS System{% endblock %}
+
+{% block page_title %}Kitchen Display System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Pending Orders List</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Order #</th>
+                                <th>Table</th>
+                                <th>Server</th>
+                                <th>Time</th>
+                                <th>Items</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in pending_orders %}
+                            <tr>
+                                <td>#{{ order.id }}</td>
+                                <td>{{ order.table.name }}</td>
+                                <td>{{ order.user.full_name }}</td>
+                                <td>{{ order.created_at.strftime('%H:%M') }}</td>
+                                <td>
+                                    <ul class="list-unstyled">
+                                        {% for item in order.order_items %}
+                                        <li>{{ item.quantity }}x {{ item.menu_item.name }}
+                                            {% if item.notes %}
+                                            <small class="text-muted d-block">Note: {{ item.notes }}</small>
+                                            {% endif %}
+                                        </li>
+                                        {% endfor %}
+                                    </ul>
+                                </td>
+                                <td>
+                                    {% if order.status == 'open' %}
+                                    <form action="{{ url_for('update_order_status', order_id=order.id) }}" method="post" style="display: inline;">
+                                        <input type="hidden" name="status" value="in_progress">
+                                        <button type="submit" class="btn btn-sm btn-success">START</button>
+                                    </form>
+                                    {% elif order.status == 'in_progress' %}
+                                    <form action="{{ url_for('update_order_status', order_id=order.id) }}" method="post" style="display: inline;">
+                                        <input type="hidden" name="status" value="ready">
+                                        <button type="submit" class="btn btn-sm btn-primary">READY</button>
+                                    </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center">No pending orders</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Cook Status</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-center">
+                            <span class="badge bg-success p-2 me-2"></span>
+                            <span>John - Available</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-center">
+                            <span class="badge bg-warning p-2 me-2"></span>
+                            <span>Ana - Busy</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-center">
+                            <span class="badge bg-danger p-2 me-2"></span>
+                            <span>Luis - Very Busy</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

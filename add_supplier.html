@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Supplier - Restaurant POS System{% endblock %}
+
+{% block page_title %}Add Supplier{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 col-md-10 mx-auto">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Add New Supplier</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Supplier Name</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="contact" class="form-label">Contact Person</label>
+                        <input type="text" class="form-control" id="contact" name="contact">
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="phone" class="form-label">Phone Number</label>
+                            <input type="tel" class="form-control" id="phone" name="phone">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="address" class="form-label">Address</label>
+                        <textarea class="form-control" id="address" name="address" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="ingredients" class="form-label">Available Ingredients</label>
+                        <select multiple class="form-select" id="ingredients" name="ingredients" size="8">
+                            {% for ingredient in ingredients %}
+                            <option value="{{ ingredient.id }}">{{ ingredient.name }} ({{ ingredient.unit }})</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Hold Ctrl (or Cmd on Mac) to select multiple ingredients</div>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('suppliers') }}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">Add Supplier</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

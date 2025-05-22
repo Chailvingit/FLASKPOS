@@ -1,0 +1,284 @@
+{% extends 'base.html' %}
+
+{% block title %}Cashier Dashboard - Restaurant POS System{% endblock %}
+
+{% block page_title %}Sales Terminal{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0 d-inline-block">
+                        {% if selected_order %}
+                        Table: {{ selected_order.table.name }}
+                        {% else %}
+                        Select a Table
+                        {% endif %}
+                    </h5>
+                    <div class="dropdown d-inline-block ms-3">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="tableDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            Change
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="tableDropdown">
+                            {% for table in tables %}
+                            <li><a class="dropdown-item" href="{{ url_for('dashboard', table_id=table.id) }}">{{ table.name }} ({{ table.seats }} seats)</a></li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                <div>
+                    {% if selected_order %}
+                    <span class="me-3">Server: {{ selected_order.user.full_name }}</span>
+                    <button class="btn btn-sm btn-outline-secondary">Order #: {{ selected_order.id }}</button>
+                    {% else %}
+                    <span class="me-3">Server: {{ current_user.full_name }}</span>
+                    <button class="btn btn-sm btn-outline-secondary">New Order</button>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% if menu_items %}
+                    {% for item in menu_items[:5] %}
+                    <div class="col-md-3">
+                        <form action="{{ url_for('create_order') }}" method="post" style="margin: 0;">
+                            <input type="hidden" name="item_ids[]" value="{{ item.id }}">
+                            <input type="hidden" name="quantities[]" value="1">
+                            <input type="hidden" name="notes[]" value="">
+                            {% if selected_order and selected_order.table %}
+                            <input type="hidden" name="table_id" value="{{ selected_order.table.id }}">
+                            {% endif %}
+                            <button type="submit" class="card mb-3 w-100 border-0" style="text-align: inherit;">
+                                <div class="card-body p-2 text-center">
+                                    <h6>{{ item.name }}</h6>
+                                    <p class="mb-0">${{ item.price|round(2) }}</p>
+                                </div>
+                            </button>
+                        </form>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="col-12 text-center">
+                        <p>No menu items available</p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">Categories</h6>
+                            </div>
+                            <div class="card-body p-2">
+                                <div class="d-flex overflow-auto">
+                                    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary me-2 {% if not request.args.get('category_id') %}active{% endif %}">All</a>
+                                    {% for category in categories %}
+                                    <a href="{{ url_for('dashboard', category_id=category.id) }}" class="btn btn-outline-primary me-2 {% if request.args.get('category_id')|int == category.id %}active{% endif %}">{{ category.name }}</a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Current Order</h5>
+            </div>
+            <div class="card-body">
+                {% if selected_order %}
+                <ul class="list-group mb-3">
+                    {% for item in selected_order.order_items %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-0">{{ item.quantity }}x {{ item.menu_item.name }}</h6>
+                            <small class="text-muted">${{ item.price|round(2) }} each</small>
+                        </div>
+                        <span>${{ item.subtotal|round(2) }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                
+                <div class="d-flex justify-content-between mb-2">
+                    <h6>Subtotal:</h6>
+                    <h6>${{ selected_order.total_amount|round(2) }}</h6>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <h6>Tax:</h6>
+                    <h6>${{ (selected_order.total_amount * 0.1)|round(2) }}</h6>
+                </div>
+                <div class="d-flex justify-content-between mb-3">
+                    <h5>TOTAL:</h5>
+                    <h5>${{ (selected_order.total_amount * 1.1)|round(2) }}</h5>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary">Apply Discount</button>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <button class="btn btn-success w-100">Split</button>
+                        </div>
+                        <div class="col-6">
+                            <form action="{{ url_for('process_payment', order_id=selected_order.id) }}" method="get" style="display: inline;">
+                                <input type="hidden" name="payment_type" value="cash">
+                                <button type="submit" class="btn btn-warning w-100">Cash</button>
+                            </form>
+                        </div>
+                        <div class="col-12">
+                            <form action="{{ url_for('process_payment', order_id=selected_order.id) }}" method="get" style="display: inline;">
+                                <input type="hidden" name="payment_type" value="card">
+                                <button type="submit" class="btn btn-primary w-100">Card</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <p class="text-muted">No order selected</p>
+                    <p>Please select an order from the list below or create a new one</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Ready For Payment</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped datatable">
+                    <thead>
+                        <tr>
+                            <th>Order #</th>
+                            <th>Table</th>
+                            <th>Server</th>
+                            <th>Items</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in open_orders %}
+                        <tr>
+                            <td>#{{ order.id }}</td>
+                            <td>{{ order.table.name }}</td>
+                            <td>{{ order.user.full_name }}</td>
+                            <td>{{ order.order_items|length }} items</td>
+                            <td>${{ order.calculate_total()|round(2) }}</td>
+                            <td>
+                                <span class="badge bg-{% if order.status == 'ready' %}success{% else %}primary{% endif %}">
+                                    {{ order.status|capitalize }}
+                                </span>
+                            </td>
+                            <td>
+                                <form action="{{ url_for('process_payment', order_id=order.id) }}" method="get" style="display: inline;">
+                                    <button type="submit" class="btn btn-sm btn-primary">Pay</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center">No orders ready for payment</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    // Function to view order details
+    function viewOrder(orderId) {
+        // Fetch order details using AJAX
+        fetch(`/orders/${orderId}/details`)
+            .then(response => response.json())
+            .then(data => {
+                // Display order details in modal
+                const modalBody = document.getElementById('orderDetailsBody');
+                modalBody.innerHTML = '';
+                
+                // Add order header information
+                const headerInfo = document.createElement('div');
+                headerInfo.innerHTML = `
+                    <div class="mb-3">
+                        <h5>Order #${data.id} - Table: ${data.table_name}</h5>
+                        <p>Status: <span class="badge bg-${data.status_color}">${data.status}</span></p>
+                        <p>Created: ${data.created_time}</p>
+                    </div>
+                `;
+                modalBody.appendChild(headerInfo);
+                
+                // Add order items
+                const itemsList = document.createElement('ul');
+                itemsList.className = 'list-group mb-3';
+                
+                data.items.forEach(item => {
+                    const listItem = document.createElement('li');
+                    listItem.className = 'list-group-item d-flex justify-content-between';
+                    listItem.innerHTML = `
+                        <div>
+                            <strong>${item.quantity}x ${item.name}</strong>
+                            ${item.notes ? `<p class="mb-0 text-muted small">${item.notes}</p>` : ''}
+                        </div>
+                        <div>$${item.subtotal.toFixed(2)}</div>
+                    `;
+                    itemsList.appendChild(listItem);
+                });
+                
+                modalBody.appendChild(itemsList);
+                
+                // Add total
+                const total = document.createElement('div');
+                total.className = 'd-flex justify-content-between mt-2';
+                total.innerHTML = `
+                    <h5>Total:</h5>
+                    <h5>$${data.total.toFixed(2)}</h5>
+                `;
+                modalBody.appendChild(total);
+                
+                // Show the modal
+                const orderModal = new bootstrap.Modal(document.getElementById('orderDetailsModal'));
+                orderModal.show();
+            })
+            .catch(error => {
+                console.error('Error fetching order details:', error);
+                alert('Unable to load order details. Please try again.');
+            });
+    }
+</script>
+{% endblock %}
+
+<!-- Order Details Modal -->
+<div class="modal fade" id="orderDetailsModal" tabindex="-1" aria-labelledby="orderDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="orderDetailsModalLabel">Order Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="orderDetailsBody">
+                <!-- Order details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div> 

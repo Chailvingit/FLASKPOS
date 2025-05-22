@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Category - Restaurant POS System{% endblock %}
+
+{% block page_title %}Add Category{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 col-md-10 mx-auto">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Add New Category</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Category Name</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="display_order" class="form-label">Display Order</label>
+                        <input type="number" class="form-control" id="display_order" name="display_order" value="0" min="0" required>
+                        <div class="form-text">Lower numbers appear first in the menu.</div>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('categories') }}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">Add Category</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+
+{% block title %}Menu Management - Restaurant POS System{% endblock %}
+
+{% block page_title %}Menu Management{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-md-6">
+        <form class="d-flex">
+            <input class="form-control me-2" type="search" placeholder="Search menu items..." aria-label="Search">
+            <button class="btn btn-outline-primary" type="submit">Search</button>
+        </form>
+    </div>
+    <div class="col-md-6 text-end">
+        <a href="{{ url_for('add_menu_item') }}" class="btn btn-success">
+            <i class="fas fa-plus me-1"></i> Add Menu Item
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">Product Catalog</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped datatable">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Category</th>
+                        <th>Price</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in menu_items %}
+                    <tr>
+                        <td>{{ item.id }}</td>
+                        <td>{{ item.name }}</td>
+                        <td>{{ item.category.name }}</td>
+                        <td>${{ item.price|round(2) }}</td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{{ url_for('edit_menu_item', item_id=item.id) }}" class="btn btn-sm btn-info">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ item.id }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Delete Confirmation Modal -->
+                            <div class="modal fade" id="deleteModal{{ item.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ item.id }}" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="deleteModalLabel{{ item.id }}">Confirm Delete</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            Are you sure you want to delete <strong>{{ item.name }}</strong>? This action cannot be undone.
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <form action="{{ url_for('delete_menu_item', item_id=item.id) }}" method="POST" style="display:inline;">
+                                                <button type="submit" class="btn btn-danger">Delete</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center">No menu items found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center mt-3">
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Previous</a>
+                </li>
+                <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                <li class="page-item">
+                    <a class="page-link" href="#">Next</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">Categories</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead class="table-light">
+                    <tr>
+                        <th>Category</th>
+                        <th>Items</th>
+                        <th>Display Order</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for category in categories %}
+                    <tr>
+                        <td>{{ category.name }}</td>
+                        <td>{{ category.menu_items|length }}</td>
+                        <td>{{ category.display_order }}</td>
+                        <td>
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-info">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center">No categories found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">Price Management</h5>
+    </div>
+    <div class="card-body">
+        <div class="mb-3">
+            <label for="categoryFilter" class="form-label">Category:</label>
+            <select class="form-select" id="categoryFilter">
+                <option value="all">All Categories</option>
+                {% for category in categories %}
+                <option value="{{ category.id }}">{{ category.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead class="table-light">
+                    <tr>
+                        <th>Item</th>
+                        <th>Cost</th>
+                        <th>Price</th>
+                        <th>Margin</th>
+                        <th>Sale</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in menu_items %}
+                    <tr>
+                        <td>{{ item.name }}</td>
+                        <td>${{ item.cost|round(2) }}</td>
+                        <td>${{ item.price|round(2) }}</td>
+                        <td>{{ item.margin }}%</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary">$</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="d-flex justify-content-between mt-3">
+            <div>
+                <button class="btn btn-primary">Update Prices by 5%</button>
+                <button class="btn btn-outline-secondary">Add</button>
+            </div>
+            <div>
+                <button class="btn btn-success">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

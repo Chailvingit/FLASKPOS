@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+
+{% block title %}User Management - Restaurant POS System{% endblock %}
+
+{% block page_title %}User Management{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-md-6">
+        <form class="d-flex">
+            <input class="form-control me-2" type="search" placeholder="Search users..." aria-label="Search">
+            <button class="btn btn-outline-primary" type="submit">Search</button>
+        </form>
+    </div>
+    <div class="col-md-6 text-end">
+        <a href="{{ url_for('register') }}" class="btn btn-success">
+            <i class="fas fa-plus me-1"></i> Add New User
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped datatable">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Last Login</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>{{ user.full_name }}</td>
+                        <td>{{ user.role.name|capitalize }}</td>
+                        <td>
+                            {% if user.active %}
+                            <span class="badge bg-success">Active</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ user.last_login.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{{ url_for('edit_user', user_id=user.id) }}" class="btn btn-sm btn-info">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-warning" title="Reset Password" data-bs-toggle="modal" data-bs-target="#resetPasswordModal{{ user.id }}">
+                                    <i class="fas fa-key"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-danger" title="{% if user.active %}Deactivate{% else %}Activate{% endif %} User" data-bs-toggle="modal" data-bs-target="#toggleStatusModal{{ user.id }}">
+                                    <i class="fas {% if user.active %}fa-times{% else %}fa-check{% endif %}"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Toggle Status Modal -->
+                            <div class="modal fade" id="toggleStatusModal{{ user.id }}" tabindex="-1" aria-labelledby="toggleStatusModalLabel{{ user.id }}" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="toggleStatusModalLabel{{ user.id }}">
+                                                {% if user.active %}Deactivate{% else %}Activate{% endif %} User
+                                            </h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            Are you sure you want to {% if user.active %}deactivate{% else %}activate{% endif %} user <strong>{{ user.full_name }}</strong>?
+                                            
+                                            {% if user.active %}
+                                            <div class="alert alert-warning mt-3">
+                                                This will prevent the user from logging into the system.
+                                            </div>
+                                            {% else %}
+                                            <div class="alert alert-info mt-3">
+                                                This will allow the user to log into the system again.
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <form action="{{ url_for('toggle_user_status', user_id=user.id) }}" method="POST">
+                                                <button type="submit" class="btn {% if user.active %}btn-danger{% else %}btn-success{% endif %}">
+                                                    {% if user.active %}Deactivate{% else %}Activate{% endif %} User
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Reset Password Modal -->
+                            <div class="modal fade" id="resetPasswordModal{{ user.id }}" tabindex="-1" aria-labelledby="resetPasswordModalLabel{{ user.id }}" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="resetPasswordModalLabel{{ user.id }}">Reset Password for {{ user.full_name }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <form action="{{ url_for('reset_user_password', user_id=user.id) }}" method="POST">
+                                            <div class="modal-body">
+                                                <div class="mb-3">
+                                                    <label for="newPassword{{ user.id }}" class="form-label">New Password</label>
+                                                    <input type="password" class="form-control" id="newPassword{{ user.id }}" name="new_password" required>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="confirmPassword{{ user.id }}" class="form-label">Confirm Password</label>
+                                                    <input type="password" class="form-control" id="confirmPassword{{ user.id }}" name="confirm_password" required>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-warning">Reset Password</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center">No users found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- User details are now handled through modals -->
+{% endblock %} 

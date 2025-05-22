@@ -1,0 +1,641 @@
+{% extends 'base.html' %}
+
+{% block title %}Waiter Dashboard - Restaurant POS System{% endblock %}
+
+{% block page_title %}Waiter Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card card-dashboard mb-4">
+            <div class="card-body">
+                <h5 class="mb-3">Quick Actions:</h5>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newOrderModal">
+                        <i class="fas fa-plus me-1"></i> New Order
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#modifyOrderModal">
+                        <i class="fas fa-edit me-1"></i> Modify Order
+                    </button>
+                    <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#billRequestModal">
+                        <i class="fas fa-file-invoice-dollar me-1"></i> Bill Request
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5>Today's Summary:</h5>
+                <p class="mb-0">Active Tables: {{ tables|selectattr('occupied', 'eq', true)|list|length }}/{{ tables|length }} | 
+                Open Orders: {{ open_orders }} | 
+                Avg Service: 24min</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5>Table Status:</h5>
+                <div class="row mb-3">
+                    <div class="col-auto">
+                        <span class="badge bg-success p-2">Available</span>
+                    </div>
+                    <div class="col-auto">
+                        <span class="badge bg-danger p-2">Occupied</span>
+                    </div>
+                    <div class="col-auto">
+                        <span class="badge bg-warning p-2">Reserved</span>
+                    </div>
+                </div>
+                <div class="row">
+                    {% for table in tables %}
+                    <div class="col-md-2 col-sm-4 col-6 mb-3">
+                        <div class="card {% if table.occupied %}bg-danger text-white{% else %}bg-success text-white{% endif %} h-100">
+                            <div class="card-body p-2 text-center">
+                                <h6>{{ table.name }}</h6>
+                                <p class="small mb-0">Seats: {{ table.seats }}</p>
+                                {% if table.occupied %}
+                                <p class="small mb-0">Status: Occupied</p>
+                                {% else %}
+                                <p class="small mb-0">Status: Available</p>
+                                {% endif %}
+                                <button class="btn btn-sm btn-light mt-2" onclick="selectTable({{ table.id }}, '{{ table.name }}')" 
+                                        data-bs-toggle="modal" data-bs-target="#newOrderModal">
+                                    Select
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Active Orders List with Time and Status</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped datatable">
+                    <thead>
+                        <tr>
+                            <th>Order #</th>
+                            <th>Table</th>
+                            <th>Items</th>
+                            <th>Time</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in active_orders %}
+                        <tr>
+                            <td>#{{ order.id }}</td>
+                            <td>{{ order.table.name }}</td>
+                            <td>
+                                {% for item in order.order_items %}
+                                    {{ item.quantity }}x {{ item.menu_item.name }}{% if not loop.last %}, {% endif %}
+                                {% endfor %}
+                            </td>
+                            <td>{{ order.created_at.strftime('%H:%M') }}</td>
+                            <td><span class="badge bg-{{ order.status_color }}">{{ order.status|capitalize }}</span></td>
+                            <td>
+                                <button class="btn btn-sm btn-info" onclick="viewOrder({{ order.id }})" data-bs-toggle="modal" data-bs-target="#viewOrderModal">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                {% if order.status in ['open', 'in_progress'] %}
+                                <button class="btn btn-sm btn-secondary" onclick="editOrder({{ order.id }})" data-bs-toggle="modal" data-bs-target="#modifyOrderModal">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                {% endif %}
+                                {% if order.status == 'ready' %}
+                                <button class="btn btn-sm btn-primary" onclick="requestBill({{ order.id }})" data-bs-toggle="modal" data-bs-target="#billRequestModal">
+                                    <i class="fas fa-file-invoice-dollar"></i>
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center">No active orders found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Order Modal -->
+<div class="modal fade" id="newOrderModal" tabindex="-1" aria-labelledby="newOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="newOrderModalLabel">Create New Order</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('create_order') }}" method="POST" id="newOrderForm">
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="tableSelect" class="form-label">Select Table</label>
+                            <select class="form-select" id="tableSelect" name="table_id" required>
+                                <option value="" selected disabled>Choose a table...</option>
+                                {% for table in tables %}
+                                {% if not table.occupied %}
+                                <option value="{{ table.id }}">{{ table.name }} ({{ table.seats }} seats)</option>
+                                {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label">Menu Items</label>
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <ul class="nav nav-tabs card-header-tabs" id="categoryTabs" role="tablist">
+                                                {% for category in categories %}
+                                                <li class="nav-item" role="presentation">
+                                                    <button class="nav-link {% if loop.first %}active{% endif %}" 
+                                                            id="cat-{{ category.id }}-tab" 
+                                                            data-bs-toggle="tab" 
+                                                            data-bs-target="#cat-{{ category.id }}" 
+                                                            type="button" 
+                                                            role="tab" 
+                                                            aria-controls="cat-{{ category.id }}" 
+                                                            aria-selected="{% if loop.first %}true{% else %}false{% endif %}">
+                                                        {{ category.name }}
+                                                    </button>
+                                                </li>
+                                                {% endfor %}
+                                            </ul>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="tab-content" id="categoryTabContent">
+                                                {% for category in categories %}
+                                                <div class="tab-pane fade {% if loop.first %}show active{% endif %}" 
+                                                     id="cat-{{ category.id }}" 
+                                                     role="tabpanel" 
+                                                     aria-labelledby="cat-{{ category.id }}-tab">
+                                                    <div class="row">
+                                                        {% for item in category.menu_items %}
+                                                        {% if item.available %}
+                                                        <div class="col-md-4 mb-2">
+                                                            <div class="card h-100">
+                                                                <div class="card-body p-2">
+                                                                    <h6 class="card-title">{{ item.name }}</h6>
+                                                                    <p class="card-text small mb-2">{{ item.description|truncate(50) }}</p>
+                                                                    <p class="fw-bold mb-2">${{ item.price }}</p>
+                                                                    <button type="button" class="btn btn-sm btn-primary w-100" 
+                                                                            onclick="addItemToOrder({{ item.id }}, '{{ item.name }}', {{ item.price }})">
+                                                                        Add to Order
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        {% endif %}
+                                                        {% endfor %}
+                                                    </div>
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h5 class="mb-0">Current Order</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="order-items-list" id="orderItemsList">
+                                                <p class="text-muted text-center" id="emptyOrderMessage">No items in order yet</p>
+                                                <ul class="list-group" id="orderItemsContainer"></ul>
+                                            </div>
+                                            <hr>
+                                            <div class="d-flex justify-content-between fw-bold">
+                                                <span>Total:</span>
+                                                <span id="orderTotal">$0.00</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Hidden inputs to store order items data -->
+                    <div id="orderItemsData"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Order</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modify Order Modal -->
+<div class="modal fade" id="modifyOrderModal" tabindex="-1" aria-labelledby="modifyOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modifyOrderModalLabel">Modify Order</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="orderSelectForModify" class="form-label">Select Order</label>
+                    <select class="form-select" id="orderSelectForModify">
+                        <option value="" selected disabled>Choose an order...</option>
+                        {% for order in active_orders %}
+                        {% if order.status in ['open', 'in_progress'] %}
+                        <option value="{{ order.id }}">Order #{{ order.id }} - {{ order.table.name }}</option>
+                        {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+                <form action="{{ url_for('modify_order') }}" method="POST" id="modifyOrderForm">
+                    <input type="hidden" id="orderIdToModify" name="order_id">
+                    <div class="order-details" id="orderDetailsForModify">
+                        <p class="text-muted text-center">Select an order to modify</p>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="modifyOrderForm" class="btn btn-primary">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bill Request Modal -->
+<div class="modal fade" id="billRequestModal" tabindex="-1" aria-labelledby="billRequestModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="billRequestModalLabel">Request Bill</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('request_bill') }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="orderSelectForBill" class="form-label">Select Order</label>
+                        <select class="form-select" id="orderSelectForBill" name="order_id" required>
+                            <option value="" selected disabled>Choose an order...</option>
+                            {% for order in active_orders %}
+                            {% if order.status == 'ready' %}
+                            <option value="{{ order.id }}">Order #{{ order.id }} - {{ order.table.name }} - ${{ order.total_amount }}</option>
+                            {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div id="billDetails"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Request Bill</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- View Order Modal -->
+<div class="modal fade" id="viewOrderModal" tabindex="-1" aria-labelledby="viewOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewOrderModalLabel">Order Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="viewOrderDetails">
+                <p class="text-center text-muted">Loading order details...</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let orderItems = [];
+    let orderTotal = 0;
+    
+    // Function to select table from the tables grid
+    function selectTable(tableId, tableName) {
+        document.getElementById('tableSelect').value = tableId;
+    }
+    
+    // Function to add item to order
+    function addItemToOrder(itemId, itemName, itemPrice) {
+        // Check if item is already in the order
+        let existingItem = orderItems.find(item => item.id === itemId);
+        
+        if (existingItem) {
+            existingItem.quantity += 1;
+        } else {
+            orderItems.push({
+                id: itemId,
+                name: itemName,
+                price: itemPrice,
+                quantity: 1,
+                notes: ''
+            });
+        }
+        
+        updateOrderDisplay();
+    }
+    
+    // Function to remove item from order
+    function removeItemFromOrder(index) {
+        orderItems.splice(index, 1);
+        updateOrderDisplay();
+    }
+    
+    // Function to update quantity of an item
+    function updateItemQuantity(index, newQuantity) {
+        if (newQuantity < 1) {
+            removeItemFromOrder(index);
+            return;
+        }
+        
+        orderItems[index].quantity = newQuantity;
+        updateOrderDisplay();
+    }
+    
+    // Function to update the order display
+    function updateOrderDisplay() {
+        const container = document.getElementById('orderItemsContainer');
+        const emptyMessage = document.getElementById('emptyOrderMessage');
+        const dataContainer = document.getElementById('orderItemsData');
+        
+        // Clear containers
+        container.innerHTML = '';
+        dataContainer.innerHTML = '';
+        
+        // Calculate total
+        orderTotal = 0;
+        
+        if (orderItems.length === 0) {
+            emptyMessage.style.display = 'block';
+        } else {
+            emptyMessage.style.display = 'none';
+            
+            orderItems.forEach((item, index) => {
+                const itemTotal = item.price * item.quantity;
+                orderTotal += itemTotal;
+                
+                // Create list item
+                const listItem = document.createElement('li');
+                listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+                
+                const itemContent = document.createElement('div');
+                itemContent.innerHTML = `
+                    <div class="fw-bold">${item.name}</div>
+                    <div class="d-flex align-items-center">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="updateItemQuantity(${index}, ${item.quantity - 1})">-</button>
+                        <span class="px-2">${item.quantity}</span>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="updateItemQuantity(${index}, ${item.quantity + 1})">+</button>
+                    </div>
+                `;
+                
+                const priceTag = document.createElement('span');
+                priceTag.innerHTML = `$${itemTotal.toFixed(2)} <button class="btn btn-sm text-danger" onclick="removeItemFromOrder(${index})"><i class="fas fa-times"></i></button>`;
+                
+                listItem.appendChild(itemContent);
+                listItem.appendChild(priceTag);
+                container.appendChild(listItem);
+                
+                // Add hidden inputs for form submission
+                const itemIdInput = document.createElement('input');
+                itemIdInput.type = 'hidden';
+                itemIdInput.name = `item_ids[]`;
+                itemIdInput.value = item.id;
+                dataContainer.appendChild(itemIdInput);
+                
+                const quantityInput = document.createElement('input');
+                quantityInput.type = 'hidden';
+                quantityInput.name = `quantities[]`;
+                quantityInput.value = item.quantity;
+                dataContainer.appendChild(quantityInput);
+                
+                const notesInput = document.createElement('input');
+                notesInput.type = 'hidden';
+                notesInput.name = `notes[]`;
+                notesInput.value = item.notes || '';
+                dataContainer.appendChild(notesInput);
+            });
+        }
+        
+        document.getElementById('orderTotal').textContent = `$${orderTotal.toFixed(2)}`;
+    }
+    
+    // Function to fetch and display order details for modification
+    function editOrder(orderId) {
+        document.getElementById('orderIdToModify').value = orderId;
+        document.getElementById('orderSelectForModify').value = orderId;
+        
+        // Fetch order details via AJAX
+        fetch(`/orders/${orderId}/details`)
+            .then(response => response.json())
+            .then(data => {
+                const orderDetails = document.getElementById('orderDetailsForModify');
+                let html = `
+                    <div class="alert alert-info">
+                        Order #${data.id} - ${data.table_name}
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th width="100">Quantity</th>
+                                    <th width="100">Price</th>
+                                    <th width="80">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                data.items.forEach((item, index) => {
+                    html += `
+                        <tr>
+                            <td>${item.name}</td>
+                            <td>
+                                <input type="number" class="form-control form-control-sm" name="item_quantities[]" value="${item.quantity}" min="0">
+                                <input type="hidden" name="item_ids[]" value="${item.id}">
+                            </td>
+                            <td>$${item.price}</td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-danger" onclick="removeOrderItem(this)">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-end mt-2">
+                        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addItemsModal">
+                            Add More Items
+                        </button>
+                    </div>
+                `;
+                
+                orderDetails.innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Error fetching order details:', error);
+                document.getElementById('orderDetailsForModify').innerHTML = 
+                    '<div class="alert alert-danger">Error loading order details</div>';
+            });
+    }
+    
+    // Function to view order details
+    function viewOrder(orderId) {
+        // Fetch order details via AJAX
+        fetch(`/orders/${orderId}/details`)
+            .then(response => response.json())
+            .then(data => {
+                const viewOrderDetails = document.getElementById('viewOrderDetails');
+                let html = `
+                    <div class="alert alert-info mb-3">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Order #${data.id}</strong><br>
+                                Table: ${data.table_name}
+                            </div>
+                            <div class="col-md-6 text-end">
+                                Status: <span class="badge bg-${data.status_color}">${data.status}</span><br>
+                                Time: ${data.created_time}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Qty</th>
+                                    <th class="text-end">Price</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                data.items.forEach(item => {
+                    html += `
+                        <tr>
+                            <td>${item.name}</td>
+                            <td>${item.quantity}</td>
+                            <td class="text-end">$${(item.price * item.quantity).toFixed(2)}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                            <tr>
+                                <td colspan="2" class="text-end fw-bold">Total:</td>
+                                <td class="text-end fw-bold">$${data.total.toFixed(2)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                `;
+                
+                viewOrderDetails.innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Error fetching order details:', error);
+                document.getElementById('viewOrderDetails').innerHTML = 
+                    '<div class="alert alert-danger">Error loading order details</div>';
+            });
+    }
+    
+    // Function to request bill
+    function requestBill(orderId) {
+        document.getElementById('orderSelectForBill').value = orderId;
+        
+        // Fetch order details for bill
+        fetch(`/orders/${orderId}/details`)
+            .then(response => response.json())
+            .then(data => {
+                const billDetails = document.getElementById('billDetails');
+                
+                let html = `
+                    <div class="alert alert-info mb-3">
+                        <div class="row">
+                            <div class="col-12">
+                                <strong>Order #${data.id}</strong><br>
+                                Table: ${data.table_name}<br>
+                                Total: $${data.total.toFixed(2)}
+                            </div>
+                        </div>
+                    </div>
+                    <p>Are you sure you want to request a bill for this order?</p>
+                `;
+                
+                billDetails.innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Error fetching bill details:', error);
+                document.getElementById('billDetails').innerHTML = 
+                    '<div class="alert alert-danger">Error loading bill details</div>';
+            });
+    }
+    
+    // Function to remove an item from order modification
+    function removeOrderItem(button) {
+        const row = button.closest('tr');
+        row.querySelector('input[type="number"]').value = 0; // Set quantity to 0 instead of removing
+    }
+    
+    // Document Ready - Initialize event handlers
+    document.addEventListener('DOMContentLoaded', function() {
+        const orderSelect = document.getElementById('orderSelectForModify');
+        if (orderSelect) {
+            orderSelect.addEventListener('change', function() {
+                const orderId = this.value;
+                if (orderId) {
+                    editOrder(orderId);
+                }
+            });
+        }
+        
+        const billOrderSelect = document.getElementById('orderSelectForBill');
+        if (billOrderSelect) {
+            billOrderSelect.addEventListener('change', function() {
+                const orderId = this.value;
+                if (orderId) {
+                    requestBill(orderId);
+                }
+            });
+        }
+    });
+</script>
+{% endblock %} 

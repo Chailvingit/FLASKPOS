@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+
+{% block title %}Report Center - Restaurant POS System{% endblock %}
+
+{% block page_title %}Report Center{% endblock %}
+
+{% block content %}
+<div class="card mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">Generate Reports</h5>
+    </div>
+    <div class="card-body">
+        <form>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Date Range:</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control datepicker" placeholder="From" value="01/01/2023">
+                            <span class="input-group-text">to</span>
+                            <input type="text" class="form-control datepicker" placeholder="To" value="01/31/2023">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Report Type:</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="report_type" id="sales" value="sales" checked>
+                            <label class="btn btn-outline-primary" for="sales">Sales</label>
+                            
+                            <input type="radio" class="btn-check" name="report_type" id="inventory" value="inventory">
+                            <label class="btn btn-outline-primary" for="inventory">Inventory</label>
+                            
+                            <input type="radio" class="btn-check" name="report_type" id="labor" value="labor">
+                            <label class="btn btn-outline-primary" for="labor">Labor</label>
+                            
+                            <input type="radio" class="btn-check" name="report_type" id="menu" value="menu">
+                            <label class="btn btn-outline-primary" for="menu">Menu Analysis</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="text-end">
+                <button type="submit" class="btn btn-primary">Generate Report</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">Sales Report</h5>
+    </div>
+    <div class="card-body">
+        <div class="text-center p-5 bg-light mb-4 rounded">
+            <i class="fas fa-chart-bar fa-3x text-secondary mb-3"></i>
+            <p class="mb-0">Sample bar graph chart would be displayed here</p>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card border-0 bg-light">
+                    <div class="card-body">
+                        <h5>Total Sales</h5>
+                        <h2>$143,562.50</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 bg-light">
+                    <div class="card-body">
+                        <h5>Best Seller</h5>
+                        <h4>Burger (432 units)</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 bg-light">
+                    <div class="card-body">
+                        <h5>Average Check</h5>
+                        <h2>$24.75</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-end mt-4">
+            <button class="btn btn-secondary">Export PDF</button>
+            <button class="btn btn-secondary">Export CSV</button>
+            <button class="btn btn-secondary">Email Report</button>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">Recent Reports</h5>
+    </div>
+    <div class="card-body">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Report</th>
+                    <th>Type</th>
+                    <th>Date Range</th>
+                    <th>Generated</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>January Sales Report</td>
+                    <td>Sales</td>
+                    <td>01/01/2023 - 01/31/2023</td>
+                    <td>02/01/2023</td>
+                    <td>
+                        <button class="btn btn-sm btn-info">View</button>
+                        <button class="btn btn-sm btn-secondary">Download</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Q4 Inventory Report</td>
+                    <td>Inventory</td>
+                    <td>10/01/2022 - 12/31/2022</td>
+                    <td>01/05/2023</td>
+                    <td>
+                        <button class="btn btn-sm btn-info">View</button>
+                        <button class="btn btn-sm btn-secondary">Download</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>December Labor Analysis</td>
+                    <td>Labor</td>
+                    <td>12/01/2022 - 12/31/2022</td>
+                    <td>01/02/2023</td>
+                    <td>
+                        <button class="btn btn-sm btn-info">View</button>
+                        <button class="btn btn-sm btn-secondary">Download</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        $('.datepicker').datepicker({
+            format: 'mm/dd/yyyy',
+            autoclose: true,
+            todayHighlight: true
+        });
+    });
+</script>
+{% endblock %} 

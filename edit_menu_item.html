@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Menu Item - Restaurant POS System{% endblock %}
+
+{% block page_title %}Edit Menu Item{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 col-md-10 mx-auto">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Edit Menu Item</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="name" name="name" value="{{ menu_item.name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3">{{ menu_item.description }}</textarea>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="price" class="form-label">Price ($)</label>
+                            <input type="number" class="form-control" id="price" name="price" step="0.01" min="0" value="{{ menu_item.price }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="cost" class="form-label">Cost ($)</label>
+                            <input type="number" class="form-control" id="cost" name="cost" step="0.01" min="0" value="{{ menu_item.cost }}" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="category_id" class="form-label">Category</label>
+                        <select class="form-select" id="category_id" name="category_id" required>
+                            {% for category in categories %}
+                            <option value="{{ category.id }}" {% if category.id == menu_item.category_id %}selected{% endif %}>{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="available" name="available" {% if menu_item.available %}checked{% endif %}>
+                        <label class="form-check-label" for="available">Available</label>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('menu') }}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
